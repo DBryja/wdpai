@@ -47,7 +47,7 @@ p {
     text-decoration: none;
     border-radius: 5px;
     font-weight: bold;
-    transition: background 0.3s;
+    transition: background-color 0.3s;
 }
 
 .btn:hover {
@@ -65,8 +65,8 @@ footer {
     background: #222;
     color: white;
 }
-
     </style>
+    <link rel="stylesheet" href="/css/index.css"
 </head>
 <body>
 
