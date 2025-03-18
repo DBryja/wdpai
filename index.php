@@ -9,4 +9,5 @@ $path = parse_url($path, PHP_URL_PATH);
 Routing::get("index", "DefaultController");
 Routing::get("dashboard", "DefaultController");
 Routing::post("login", "SecurityController");
+Routing::post("addProject", "ProjectController");
 Routing::run($path);
