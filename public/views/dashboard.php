@@ -10,7 +10,7 @@
       rel="stylesheet"
     />
     <script src="https://kit.fontawesome.com/8fd9367667.js" crossorigin="anonymous"></script>
-    <link href="../css/index.css" rel="stylesheet" />
+    <link href="public/css/index.css" rel="stylesheet" />
     <title>DASHBOARD</title>
   </head>
   <body>

@@ -11,23 +11,33 @@
     />
     <script src="https://kit.fontawesome.com/8fd9367667.js" crossorigin="anonymous"></script>
 
-    <link href="../../css/index.css" rel="stylesheet" />
+    <link href="public/css/index.css" rel="stylesheet" />
 
     <title>LOGIN</title>
   </head>
   <body id="login-page" class="flex-row-center-center">
     <div class="flex-column-center-center">
       <h1>LOGIN</h1>
-      <form class="login-form flex-column-center-center">
+        <div class="messages">
+            <?php
+                if(isset($messages))
+                    foreach($messages as $message)
+                        echo $message;
+            ?>
+        </div>
+      <form class="login-form flex-column-center-center" action="login" method="POST">
         <div class="email">
-          <input type="email" placeholder="email" />
+          <input type="email" name="email" placeholder="email" />
           <i class="fa-solid fa-at flex-column-center-center"></i>
         </div>
         <div class="password">
-          <input type="password" placeholder="password" />
+          <input type="password" name="password" placeholder="password" />
           <i class="fa-solid fa-key flex-column-center-center"></i>
         </div>
-        <button type="submit"><i class="fa-solid fa-right-to-bracket"></i> SIGN IN</button>
+        <button type="submit">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            SIGN IN
+        </button>
       </form>
     </div>
   </body>
