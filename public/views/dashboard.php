@@ -32,6 +32,14 @@
     </nav>
     <main>
       <section>
+          <?php
+            if(isset($cards))
+                foreach($cards as $card)
+                    echo "<div class='card'>
+                            <img src='public/uploads/{$card->getImage()}' alt='' />
+                            <p class='flex-row-center-center'>{$card->getTitle()}</p>
+                            </div>";
+          ?>
         <div class="card">
           <img src="https://picsum.photos/200" alt="" />
           <p class="flex-row-center-center">card</p>
