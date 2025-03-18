@@ -31,6 +31,9 @@ RUN apk add --no-cache --virtual .run-deps $RUN_DEPS
 
 RUN echo 'memory_limit = -1' >> /usr/local/etc/php/conf.d/docker-php-memlimit.ini;
 
+# Ensure the pdo_pgsql extension is enabled
+RUN docker-php-ext-enable pdo_pgsql
+
 # Copy the application code
 COPY . /app
 

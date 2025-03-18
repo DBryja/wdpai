@@ -1,8 +1,6 @@
 <?php
 namespace controllers;
 use models\Card;
-use models\User;
-use models\Role;
 use Random\RandomException;
 
 class ProjectController extends AppController

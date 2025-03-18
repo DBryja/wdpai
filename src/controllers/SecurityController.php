@@ -1,17 +1,14 @@
 <?php
 namespace controllers;
-use models\User;
-use models\Role;
+use repository\UserRepository;
 class SecurityController extends AppController
 {
     public function login(){
-        $user = new User(
-            "test@test.com",
-            "test123",
-            Role::ADMIN
-        );
+        $userRepository = new UserRepository();
         $email = $_POST['email'];
         $password = $_POST['password'];
+
+        $user = $userRepository->getUser($email);
 
         if($user->getEmail() != $email){
             return $this->render("login", ['messages' => ['Wrong email']]);
