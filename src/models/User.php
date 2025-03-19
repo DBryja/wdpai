@@ -2,52 +2,32 @@
 
 namespace models;
 
-enum Role: string{
-    case ADMIN = 'admin';
-    case USER = 'user';
-    case GUEST = 'guest';
-}
-class User
-{
+class User {
+    private $id;
     private $email;
-    private $password;
+    private $passwordHash;
     private $role;
 
-    public function __construct(string $email, string $password, Role $role)
-    {
+    public function __construct($email, $passwordHash, $role, $id=null) {
+        $this->id = $id;
         $this->email = $email;
-        $this->password = $password;
+        $this->passwordHash = $passwordHash;
         $this->role = $role;
     }
 
-    public function getEmail(): string
-    {
+    public function getId() {
+        return $this->id;
+    }
+
+    public function getEmail() {
         return $this->email;
     }
 
-    public function setEmail(string $email): void
-    {
-        $this->email = $email;
+    public function getPasswordHash() {
+        return $this->passwordHash;
     }
 
-    public function getPassword(): string
-    {
-        return $this->password;
-    }
-
-    public function setPassword(string $password): void
-    {
-        $this->password = $password;
-    }
-
-    public function getRole(): Role
-    {
+    public function getRole() {
         return $this->role;
     }
-
-    public function setRole(Role $role): void
-    {
-        $this->role = $role;
-    }
-
 }

@@ -15,7 +15,11 @@ class UserRepository extends Repository
 //            TODO: throw exception
             return null;
         }
-        return new User($user['email'], $user['password'], Role::from($user['role']));
+        return new User(
+            $user['email'],
+            $user['password'],
+            Role::from($user['role']),
+            $user["id"]);
     }
 
 }
