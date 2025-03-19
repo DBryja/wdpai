@@ -4,7 +4,7 @@ require_once __DIR__ . '/Routing.php';
 
 use utils\LoginSecurity;
 
-$path = trim($_SERVER['REQUEST_URI'], '/');
+$path = str_replace('/', '_', trim($_SERVER['REQUEST_URI'], '/'));
 $path = parse_url($path, PHP_URL_PATH);
 
 if ($path === '') {
@@ -13,11 +13,17 @@ if ($path === '') {
 
 LoginSecurity::checkAdminAccess();
 
+// to get nested paths like admin/users change the "/" to "_"
+// and add the method in the controller
 Routing::get("index", "DefaultController");
 Routing::get("dashboard", "DefaultController");
 Routing::get("adminLogin", "DefaultController");
-Routing::get("admin", "DefaultController");
+
+Routing::get("admin", "AdminController");
+Routing::get("admin_users", "AdminController");
+Routing::get("admin_cars", "AdminController");
+Routing::get("admin_editCar", "AdminController");
+
 Routing::post("adminLogin", "SecurityController");
-Routing::post("addProject", "ProjectController");
 Routing::post("logout", "SecurityController");
 Routing::run($path);

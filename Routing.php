@@ -2,6 +2,7 @@
 
 use controllers\DefaultController;
 use controllers\SecurityController;
+use controllers\AdminController;
 
 class Routing {
     public static $routes;

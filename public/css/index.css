@@ -6,6 +6,7 @@
     font-style: normal;
     font-size: 14px;
     --primary-color: blue;
+    box-sizing: border-box;
 }
 body {
     padding: 16px;
@@ -24,6 +25,7 @@ header {
     display: flex;
     padding: 2rem;
     justify-content: space-between;
+    width: 80%;
     nav{
         display: flex;
         column-gap: 2rem;
@@ -31,4 +33,13 @@ header {
 }
 main{
     margin-top: 5rem;
+}
+
+.flex-row{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: fit-content;
+    column-gap: 2rem;
 }
