@@ -16,6 +16,10 @@ class AppController {
         return $this->request === 'POST';
     }
 
+    protected function getContentType(){
+        return isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+    }
+
    protected function render(string $template = "", array $variables = []) {
       $templatePath = "public/views/".$template.".php";
       $output = "File not found: ".$templatePath;

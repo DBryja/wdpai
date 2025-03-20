@@ -11,9 +11,9 @@ class CarDetail {
     private $horsepower;
     private $transmission;
     private $color;
-    private $condition;
+    private $description;
 
-    public function __construct($id, $carId, $mileage, $fuelType, $engineSize, $horsepower, $transmission, $color, $condition) {
+    public function __construct($id, $carId, $mileage, $fuelType, $engineSize, $horsepower, $transmission, $color, $description = '') {
         $this->id = $id;
         $this->carId = $carId;
         $this->mileage = $mileage;
@@ -22,7 +22,7 @@ class CarDetail {
         $this->horsepower = $horsepower;
         $this->transmission = $transmission;
         $this->color = $color;
-        $this->condition = $condition;
+        $this->description = $description;
     }
 
     public function getId() {
@@ -57,7 +57,17 @@ class CarDetail {
         return $this->color;
     }
 
-    public function getCondition() {
-        return $this->condition;
+    public function getDescription() {
+        return $this->description;
+    }
+
+    public function setMileage($mileage) {
+        $this->mileage = $mileage;
+        return $this;
+    }
+
+    public function setDescription($description) {
+        $this->description = $description;
+        return $this;
     }
 }

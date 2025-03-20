@@ -2,25 +2,19 @@
 
 namespace models;
 
-class Model {
+class Brand {
     private $id;
-    private $brandId;
     private $name;
     private $isActive;
 
-    public function __construct($id, $brandId, $name, $isActive = true) {
+    public function __construct($id, $name, $isActive = true) {
         $this->id = $id;
-        $this->brandId = $brandId;
         $this->name = $name;
         $this->isActive = $isActive;
     }
 
     public function getId() {
         return $this->id;
-    }
-
-    public function getBrandId() {
-        return $this->brandId;
     }
 
     public function getName() {
