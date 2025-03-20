@@ -26,4 +26,15 @@ Routing::get("admin_editCar", "AdminController");
 
 Routing::post("adminLogin", "SecurityController");
 Routing::post("logout", "SecurityController");
+Routing::post("admin_addCar", "AdminController");
+Routing::post("admin_updateCar", "AdminController");
+
+//API
+Routing::POST("api_getAllCars", "ApiController");
+Routing::POST("api_getAllCars_withModel", "ApiController");
+Routing::POST("api_getCarsByAttributes", "ApiController");
+Routing::POST("api_getAllCars_withDetails", "ApiController");
+Routing::POST("api_getCarById_withDetails", "ApiController");
+Routing::POST("api_deleteCar", "ApiController");
+
 Routing::run($path);

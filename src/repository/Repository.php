@@ -1,12 +1,14 @@
 <?php
 
 namespace repository;
-//require_once __DIR__ . '/../../Database.php';
+
 use Database;
+
 class Repository
 {
-    protected $db;
-//    TODO: Zrobić singletona
+    private static $instance = null;
+    protected Database $db;
+
     public function __construct()
     {
         $this->db = new Database();
