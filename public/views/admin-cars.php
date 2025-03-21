@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__."/../utils/ComponentLoader.php";
-ComponentLoader::load('header', ['title' => 'Admin']);
+ComponentLoader::load('header', ['title' => 'Admin - Cars']);
 use repository\BrandRepository;
 use repository\ModelRepository;
 
@@ -24,14 +24,17 @@ $models = $modelsRepo->getAll();
     </div>
 
     <div class="dashboard">
-        <div id="archive" class="cars-list">
-        <!-- Here I want to generate a carItem based on fetch API-->
-
+        <div id="archive" class="dashboard-list">
         </div>
-        <div id="car-modal" class="car-modal">
-            <div><h3>ADD NEW CAR</h3><button onClick="addNewCar()">Add New Car</button></div>
-            <form action="/admin/addCar" method="post" class="car-modal-form" enctype="multipart/form-data">
-                <input type="hidden" name="id" id="car-id">
+        <div class="scroll-container">
+            <div id="car-modal" class="dashboard-modal">
+                <div><h3>ADD NEW CAR</h3><button onClick="addNewCar()">Add New Car</button></div>
+                <form action="/admin/addCar" method="post" class="dashboard-modal-form" enctype="multipart/form-data">
+                <input type="hidden" name="car_id" id="car-id">
+
+                <label for="car-title">Title:
+                    <input type="text" name="title" id="car-title" maxlength="100" required>
+                </label>
 
                 <label for="car-brand">Brand:
                     <input type="text" name="brand" id="car-brand" list="brand-list" required>
@@ -124,6 +127,7 @@ $models = $modelsRepo->getAll();
                 <button type="submit">Save</button>
                 <button onclick="" disabled hidden="hidden">DeleteCar (click twice)</button>
             </form>
+            </div>
         </div>
     </div>
 </main>
@@ -153,7 +157,7 @@ $models = $modelsRepo->getAll();
                     <div class="car-item-buttons">
                         <button class="edit-car">Edit</button>
                         <button class="delete-car">Delete</button>
-                        <button class="view-car"><a href="/car/?id=${car.id}">View</a></button>
+                        <button class="view-car"><a href="/car?id=${car.id}" target="_blank" rel="noreferrer">View</a></button>
                     </div>
                 `;
 
@@ -191,9 +195,14 @@ $models = $modelsRepo->getAll();
                 document.getElementById('car-status').value = car.status;
                 document.getElementById('car-isActive').checked = car.is_active;
                 document.getElementById('car-description').value = car.description;
+                document.getElementById('car-title').value = car.title;
 
-                document.querySelector('.car-modal-form').action = '/admin/updateCar';
-                document.querySelector('#car-modal h3').innerText = 'EDIT AN EXISTING CAR';
+                document.getElementById('car-images').required = false;
+                document.getElementById('car-images').hidden = true;
+                document.getElementById('car-images').parentElement.style.display = "none";
+
+                document.querySelector('.dashboard-modal-form').action = '/admin/updateCar';
+                document.querySelector('.dashboard-modal h3').innerText = 'EDIT AN EXISTING CAR';
             })
             .catch(error => console.error('Error fetching car details:', error));
     }
@@ -201,9 +210,7 @@ $models = $modelsRepo->getAll();
     function deleteCar(carId) {
         fetch(`/api/deleteCar`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: getSessionHeaders(),
             body: JSON.stringify({ car_id: carId })
         })
             .then(response => {
@@ -237,6 +244,11 @@ $models = $modelsRepo->getAll();
         document.getElementById('car-status').value = 'available';
         document.getElementById('car-isActive').checked = true;
         document.getElementById('car-description').value = '';
+        document.getElementById('car-title').value = '';
+
+        document.getElementById('car-images').required = true;
+        document.getElementById('car-images').hidden = false;
+        document.getElementById('car-images').parentElement.style.display = "grid";
 
         document.querySelector('.car-modal-form').action = '/admin/addCar';
         document.querySelector('#car-modal h3').innerText = 'ADD NEW CAR';

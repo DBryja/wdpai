@@ -8,7 +8,11 @@ class LoginSecurity
     public static function startSession(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            session_start([
+                'cookie_httponly' => true,
+                'cookie_secure' => true,
+                'use_strict_mode' => true,
+            ]);
             error_log("Session started");
         } else {
             error_log("Session already active");
@@ -18,6 +22,7 @@ class LoginSecurity
     public static function setLoginSession($userId): void
     {
         self::startSession();
+        session_regenerate_id(true); // Regenerate session ID to prevent session fixation
         $_SESSION['user_id'] = $userId;
         error_log("Session set for user_id: " . $userId);
     }

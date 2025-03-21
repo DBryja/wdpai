@@ -13,6 +13,14 @@ class ModelRepository extends Repository
         return $stmt->fetchColumn() > 0;
     }
 
+    public function find($id)
+    {
+        $query = "SELECT * FROM models WHERE id = :id";
+        $stmt = $this->db->connect()->prepare($query);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
+    }
+
     public function create($name, $brand_id) {
         // Check if model already exists by name and brand
         $query = "SELECT id FROM models WHERE LOWER(name) = LOWER(:name) AND brand_id = :brand_id";
@@ -57,6 +65,14 @@ class ModelRepository extends Repository
         $stmt = $this->db->connect()->prepare($query);
         $stmt->execute([':brand_id' => $brand_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countByBrandId($brand_id)
+    {
+        $query = "SELECT COUNT(*) FROM models WHERE brand_id = :brand_id";
+        $stmt = $this->db->connect()->prepare($query);
+        $stmt->execute([':brand_id' => $brand_id]);
+        return $stmt->fetchColumn();
     }
 
     public function update($id, $name, $brandId)

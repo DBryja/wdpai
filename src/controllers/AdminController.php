@@ -7,6 +7,7 @@ use repository\CarRepository;
 use repository\CarDetailRepository;
 use repository\BrandRepository;
 use repository\ModelRepository;
+use repository\UserRepository;
 
 class AdminController extends AppController {
     const MAX_FILE_SIZE = 1024 * 1024 * 10;
@@ -26,7 +27,6 @@ class AdminController extends AppController {
     public function admin_cars() {
         $this->render("admin-cars");
     }
-
 
     public function admin_addCar() {
         if (!$this->isPost()) {
@@ -66,6 +66,7 @@ class AdminController extends AppController {
 
         // Adding to `cars` table
         $carId = $carRepository->create([
+            "title" => $_POST['title'],
             'modelId' => $modelId,
             'year' => $_POST['year'],
             'price' => $_POST['price'],
@@ -133,25 +134,31 @@ class AdminController extends AppController {
         $carRepository = new CarRepository();
         $carDetailsRepository = new CarDetailRepository();
 
-        if (!$this->validate_addCar($_POST)) {
+        if (!$this->validate_addCar($_POST, true)) {
             return $this->render("admin-cars", [
                 'messages' => $this->messages,
             ]);
         }
 
-        // Handle Brand update
+        // Fetch the current car details
+        $currentCar = $carRepository->find($_POST['car_id']);
+        $currentModel = $modelsRepository->find($currentCar['model_id']);
+        $currentBrand = $brandsRepository->find($currentModel['brand_id']);
+
+        // Handle Brand selection/creation
         $brandName = $_POST['brand'];
-        $brandId = $_POST['brand_id'];
-        if (!$brandsRepository->update($brandId, $brandName)) {
-            $this->messages[] = "Failed to update brand.";
+        $brandId = $brandsRepository->create($brandName);
+        if (!$brandId) {
+            $this->messages[] = "Failed to create brand.";
             return $this->render("admin-cars", ['messages' => $this->messages]);
         }
 
-        // Handle Model update
+        // Handle Model selection/creation
         $modelName = $_POST['model'];
-        $modelId = $_POST['model_id'];
-        if (!$modelsRepository->update($modelId, $modelName, $brandId)) {
-            $this->messages[] = "Failed to update model.";
+        $modelId = $modelsRepository->create($modelName, $brandId);
+        if (!$modelId) {
+            $brandsRepository->deepDelete($brandId);
+            $this->messages[] = "Failed to create model.";
             return $this->render("admin-cars", ['messages' => $this->messages]);
         }
 
@@ -161,6 +168,7 @@ class AdminController extends AppController {
         // Updating `cars` table
         if (!$carRepository->update([
             'id' => $_POST['car_id'],
+            "title" => $_POST['title'],
             'modelId' => $modelId,
             'year' => $_POST['year'],
             'price' => $_POST['price'],
@@ -188,27 +196,30 @@ class AdminController extends AppController {
             return $this->render("admin-cars", ['messages' => $this->messages]);
         }
 
-        // Handle image uploads if any
-        $uploadDir = "public/uploads/cars/{$_POST['car_id']}/";
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+        // Check if the brand or model changed and delete the old ones if no other cars are using them
+        if ($currentModel['name'] !== $modelName) {
+            if ($carRepository->countByModelId($currentModel['id']) === 0) {
+                $modelsRepository->deepDelete($currentModel['id']);
+            }
         }
 
-        $uploadedImages = $this->saveCarImages($_FILES['images'], $uploadDir);
-        if (!$uploadedImages) {
-            $this->messages[] = "Failed to save images.";
-            return $this->render("admin-cars", ['messages' => $this->messages]);
+        if ($currentBrand['name'] !== $brandName) {
+            if ($modelsRepository->countByBrandId($currentBrand['id']) === 0) {
+                $brandsRepository->deepDelete($currentBrand['id']);
+            }
         }
 
         header("Location: /admin/cars");
         return $this->render("admin-cars", ["messages" => ["Car updated successfully!"]]);
     }
 
-    private function validate_addCar($data) {
+    private function validate_addCar($data, $isUpdate = false) {
         $this->messages = []; // Reset messages
 
-        if (!$this->validate_car_images($_FILES['images'])) {
-            return false;
+        if (!$isUpdate) {
+            if (!$this->validate_car_images($_FILES['images'])) {
+                return false;
+            }
         }
 
         $required_fields = ['year', 'price', 'priority', 'status', 'brand', 'model', 'description'];
@@ -223,7 +234,7 @@ class AdminController extends AppController {
             return false;
         }
 
-        // Walidacja pól numerycznych
+        // Validate numeric fields
         if (!filter_var($data['year'], FILTER_VALIDATE_INT, ["options" => ["min_range" => 1900, "max_range" => 2025]])) {
             $this->messages[] = "Invalid year.";
         }
@@ -236,13 +247,13 @@ class AdminController extends AppController {
             $this->messages[] = "Priority must be a non-negative integer.";
         }
 
-        // Walidacja statusu
+        // Validate status
         $valid_statuses = ['available', 'sold', 'reserved'];
         if (!in_array($data['status'], $valid_statuses, true)) {
             $this->messages[] = "Invalid status.";
         }
 
-        // Zwracanie wyniku walidacji
+        // Return validation result
         return empty($this->messages);
     }
 

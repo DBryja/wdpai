@@ -12,4 +12,8 @@ class DefaultController extends AppController {
     public function adminLogin(){
         $this->render("admin-login");
     }
+
+    public function car(){
+        $this->render("car-single");
+    }
 }
