@@ -4,6 +4,7 @@ namespace models;
 class Car {
     private $id;
     private $modelId;
+    private $title;
     private $price;
     private $year;
     private $isNew;
@@ -13,8 +14,9 @@ class Car {
     private $images;
     private $addedAt;
 
-    public function __construct($id, $modelId, $price, $year, $isNew, $priority = 0, $status = 'available', $isActive = true, $images = null, $addedAt = null) {
+    public function __construct($id, $title, $modelId, $price, $year, $isNew, $priority = 0, $status = 'available', $isActive = true, $images = null, $addedAt = null) {
         $this->id = $id;
+        $this->title = $title;
         $this->modelId = $modelId;
         $this->price = $price;
         $this->year = $year;
@@ -36,6 +38,16 @@ class Car {
 
     public function getPrice() {
         return $this->price;
+    }
+
+    public function getTitle()
+    {
+        return $this->title;
+    }
+
+    public function setTitle($title): void
+    {
+        $this->title = $title;
     }
 
     public function getYear() {

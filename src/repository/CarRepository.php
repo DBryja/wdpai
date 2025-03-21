@@ -15,9 +15,10 @@ class CarRepository extends Repository
         $priority = $data['priority'];
         $status = $data['status'];
         $isActive = $data['isActive'];
+        $title = $data['title'];
 
-        $queryCar = "INSERT INTO cars (id, model_id, year, price, is_new, priority, status, is_active)
-                 VALUES (gen_random_uuid(), :model_id, :year, :price, :is_new, :priority, :status, :is_active)
+        $queryCar = "INSERT INTO cars (id, model_id, year, price, is_new, priority, status, is_active, title)
+                 VALUES (gen_random_uuid(), :model_id, :year, :price, :is_new, :priority, :status, :is_active, :title)
                  RETURNING id";
 
         try {
@@ -30,6 +31,7 @@ class CarRepository extends Repository
                 ':priority' => $priority,
                 ':status' => $status,
                 ':is_active' => $isActive,
+                ':title' => $title,
             ]);
 
             return $stmt->fetchColumn();
@@ -41,7 +43,10 @@ class CarRepository extends Repository
 
     public function find($id)
     {
-        // Implement the logic to find a Car by its ID
+        $query = "SELECT * FROM cars WHERE id = :id";
+        $stmt = $this->db->connect()->prepare($query);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
     public function findAllWithModel(): array
@@ -129,15 +134,16 @@ class CarRepository extends Repository
     public function update($data)
     {
         $query = "
-        UPDATE cars
-        SET model_id = :model_id,
-            year = :year,
-            price = :price,
-            is_new = :is_new,
-            priority = :priority,
-            status = :status,
-            is_active = :is_active
-        WHERE id = :id
+    UPDATE cars
+    SET model_id = :model_id,
+        year = :year,
+        price = :price,
+        is_new = :is_new,
+        priority = :priority,
+        status = :status,
+        is_active = :is_active,
+        title = :title
+    WHERE id = :id
     ";
 
         try {
@@ -150,6 +156,7 @@ class CarRepository extends Repository
                 ':priority' => $data['priority'],
                 ':status' => $data['status'],
                 ':is_active' => $data['isActive'],
+                ':title' => $data['title'],
                 ':id' => $data['id'],
             ]);
             return true;
@@ -161,21 +168,27 @@ class CarRepository extends Repository
     public function findByIdWithDetails($carId): array
     {
         $query = "
-        SELECT
-            cars.*,
-            car_details.*,
-            brands.name as brand_name,
-            models.name as model_name
-        FROM
-            cars
-        JOIN
-            car_details ON cars.id = car_details.car_id
-        JOIN
-            models ON cars.model_id = models.id
-        JOIN
-            brands ON models.brand_id = brands.id
-        WHERE
-            cars.id = :car_id
+    SELECT
+        cars.*,
+        car_details.color,
+        car_details.description,
+        car_details.engine_size,
+        car_details.fuel_type,
+        car_details.horsepower,
+        car_details.mileage,
+        car_details.transmission,
+        brands.name as brand_name,
+        models.name as model_name
+    FROM
+        cars
+    JOIN
+        car_details ON cars.id = car_details.car_id
+    JOIN
+        models ON cars.model_id = models.id
+    JOIN
+        brands ON models.brand_id = brands.id
+    WHERE
+        cars.id = :car_id
     ";
 
         try {
@@ -234,5 +247,21 @@ class CarRepository extends Repository
             }
         }
         return rmdir($dir);
+    }
+
+    public function countByModelId($id)
+    {
+        $query = "SELECT COUNT(*) FROM cars WHERE model_id = :id";
+        $stmt = $this->db->connect()->prepare($query);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetchColumn();
+    }
+
+    public function countByBrandId($brand_id)
+    {
+        $query = "SELECT COUNT(*) FROM models WHERE brand_id = :brand_id";
+        $stmt = $this->db->connect()->prepare($query);
+        $stmt->execute([':brand_id' => $brand_id]);
+        return $stmt->fetchColumn();
     }
 }

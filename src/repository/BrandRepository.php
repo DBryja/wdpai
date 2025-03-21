@@ -7,6 +7,14 @@ use PDO;
 class BrandRepository extends Repository
 {
 
+    public function find($id)
+    {
+        $query = "SELECT * FROM brands WHERE id = :id";
+        $stmt = $this->db->connect()->prepare($query);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
+    }
+
     public function create($name) {
         // Check if brand already exists by name and return its ID if it does
         $query = "SELECT id FROM brands WHERE LOWER(name) = LOWER(:name)";
@@ -58,7 +66,7 @@ class BrandRepository extends Repository
 
     public function exists($brand_id) {
         $query = "SELECT COUNT(*) FROM brands WHERE id = :id";
-        $stmt = $this->db->prepare($query);
+        $stmt = $this->db->connect()->prepare($query);
         $stmt->execute([':id' => $brand_id]);
         return $stmt->fetchColumn() > 0;
     }

@@ -5,31 +5,34 @@ use utils\LoginSecurity;
 
 class SecurityController extends AppController
 {
-    public function adminLogin() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $userRepository = new UserRepository();
-            $email = $_POST['email'] ?? null;
-            $password = $_POST['password'] ?? null;
-
-            if ($email === null || $password === null) {
-                error_log("Email or password missing");
-                return $this->render("admin-login", ['messages' => ['Email and password are required']]);
-            }
-
-            $user = $userRepository->getUser($email);
-
-            if ($user === null || $user->getPasswordHash() !== $password) {
-                error_log("Invalid email or password");
-                return $this->render("admin-login", ['messages' => ['Invalid email or password']]);
-            }
-
-            LoginSecurity::setLoginSession($user->getId());
-            error_log("Login successful, redirecting to /admin");
-            header("Location: /admin");
-            exit();
-        } else {
+    public function adminLogin()
+    {
+        if (!$this->isPost()) {
             return $this->render("admin-login");
         }
+
+        $email = $_POST['email'];
+        $password = $_POST['password'];
+
+        $userRepository = new UserRepository();
+        if ($userRepository->comparePassword($email, $password)) {
+            $user = $userRepository->getUser($email);
+
+            $token = uniqid(); // Generate a unique session token
+            $userRepository->saveSessionToken($user->getId(), $token);
+
+            setcookie('adminEmail', $email, time() + (86400 * 30), "/");
+            setcookie('sessionToken', $token, time() + (86400 * 30), "/");
+
+            LoginSecurity::setLoginSession($user->getId());
+            header("Location: /admin/dashboard");
+        } else {
+            $this->messages[] = "Invalid email or password.";
+            return $this->render("admin-login", ['messages' => $this->messages]);
+        }
+
+        header("Location: /admin");
+        return null;
     }
 
     public function logout() {
