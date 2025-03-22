@@ -2,7 +2,9 @@
 namespace controllers;
 
 
+use repository\BrandRepository;
 use repository\CarRepository;
+use repository\ModelRepository;
 use repository\UserRepository;
 
 class ApiController extends AppController{
@@ -47,16 +49,21 @@ class ApiController extends AppController{
         }
     }
 
-    public function api_getCarsByAttributes() {
+    public function api_getCarsByAttributes()
+    {
         if (!$this->isPost()) {
             return null;
         }
         if ($this->getContentType() === "application/json") {
-            $carRepository = new CarRepository();
-            $content = trim(file_get_contents("php://input")); // Get the raw POST data
-            $attributes = json_decode($content, true); // Decode the JSON data
+            $content = trim(file_get_contents("php://input"));
+            $decoded = json_decode($content, true);
 
-            $cars = $carRepository->findByAttributes($attributes);
+            $carRepository = new CarRepository();
+            $cars = $carRepository->findByAttributes($decoded);
+
+            foreach ($cars as &$car) {
+                $car['images'] = $carRepository->getCarImages($car['id']);
+            }
 
             header("Content-Type: application/json");
             http_response_code(200);
@@ -187,6 +194,60 @@ class ApiController extends AppController{
             http_response_code(200);
             echo json_encode($userId);
         }
+    }
 
+    public function api_getBrandsLike()
+    {
+        if (!$this->isPost()) {
+            return null;
+        }
+        if ($this->getContentType() === "application/json") {
+            $content = trim(file_get_contents("php://input")); // Get the raw POST data
+            $decoded = json_decode($content, true); // Decode the JSON data
+
+            if (!isset($decoded['query'])) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Query parameter is required']);
+                return;
+            }
+
+            $query = $decoded['query'];
+            $brandsRepository = new BrandRepository();
+            $brands = $brandsRepository->findLike($query);
+            $brandNames = array_map(function($brand) {
+                return $brand['name'];
+            }, $brands);
+
+            header("Content-Type: application/json");
+            http_response_code(200);
+            echo json_encode($brandNames);
+        }
+    }
+    public function api_getModelsLike()
+    {
+        if (!$this->isPost()) {
+            return null;
+        }
+        if ($this->getContentType() === "application/json") {
+            $content = trim(file_get_contents("php://input")); // Get the raw POST data
+            $decoded = json_decode($content, true); // Decode the JSON data
+
+            if (!isset($decoded['query'])) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Query parameter is required']);
+                return;
+            }
+
+            $query = $decoded['query'];
+            $modelsRepository = new ModelRepository();
+            $models = $modelsRepository->findLike($query);
+            $modelNames = array_map(function($model) {
+                return $model['name'];
+            }, $models);
+
+            header("Content-Type: application/json");
+            http_response_code(200);
+            echo json_encode($modelNames);
+        }
     }
 }

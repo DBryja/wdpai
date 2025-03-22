@@ -13,6 +13,10 @@ $models = $modelsRepo->getAll();
 <main>
     <?php ComponentLoader::load("admin-nav"); ?>
     <h2>Welcome to the Admin Panel --- Cars Archive</h2>
+    <form action="/admin/populateCars" method="post">
+        <label>Number of cars to generate<input type="number" name="count"></label>
+        <button id="auto-fill-cars">Auto Populate Cars</button>
+    </form>
     <div>
         <?php
             if(isset($messages)){

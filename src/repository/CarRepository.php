@@ -76,12 +76,42 @@ class CarRepository extends Repository
     }
     public function findByAttributes($attributes): array
     {
-        $query = "SELECT * FROM cars WHERE 1=1";
+        $query = "
+        SELECT cars.*, brands.name as brand_name, models.name as model_name
+        FROM cars
+        JOIN models ON cars.model_id = models.id
+        JOIN brands ON models.brand_id = brands.id
+        WHERE 1=1
+    ";
         $params = [];
 
-        foreach ($attributes as $key => $value) {
-            $query .= " AND {$key} = :{$key}";
-            $params[":{$key}"] = $value;
+        if(!empty($attributes["isNew"])){
+            $query .= " AND cars.is_new = :is_new";
+            $params[':is_new'] = true;
+        }
+        if (!empty($attributes['brand'])) {
+            $query .= " AND brands.name ILIKE :brand";
+            $params[':brand'] = '%' . $attributes['brand'] . '%';
+        }
+        if (!empty($attributes['model'])) {
+            $query .= " AND models.name ILIKE :model";
+            $params[':model'] = '%' . $attributes['model'] . '%';
+        }
+        if (!empty($attributes['price-min'])) {
+            $query .= " AND cars.price >= :price_min";
+            $params[':price_min'] = $attributes['price-min'];
+        }
+        if (!empty($attributes['price-max'])) {
+            $query .= " AND cars.price <= :price_max";
+            $params[':price_max'] = $attributes['price-max'];
+        }
+        if (!empty($attributes['year-min'])) {
+            $query .= " AND cars.year >= :year_min";
+            $params[':year_min'] = $attributes['year-min'];
+        }
+        if (!empty($attributes['year-max'])) {
+            $query .= " AND cars.year <= :year_max";
+            $params[':year_max'] = $attributes['year-max'];
         }
 
         try {
@@ -120,10 +150,20 @@ class CarRepository extends Repository
         }
     }
 
-    public function findAll(): array
+    public function findAll($limit=null, $page=1): array
     {
-        $stmt = $this->db->connect()->prepare("SELECT * FROM cars");
+        $query = "SELECT * FROM cars ORDER BY priority DESC";
+        if ($limit !== null) {
+            $query .= " LIMIT :limit OFFSET :offset";
+        }
+
+        $stmt = $this->db->connect()->prepare($query);
+
         try {
+            if ($limit !== null) {
+                $stmt->bindValue(':limit', (int) $limit, \PDO::PARAM_INT);
+                $stmt->bindValue(':offset', (int) ($limit * ($page - 1)), \PDO::PARAM_INT);
+            }
             $stmt->execute();
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\PDOException $e) {
@@ -263,5 +303,219 @@ class CarRepository extends Repository
         $stmt = $this->db->connect()->prepare($query);
         $stmt->execute([':brand_id' => $brand_id]);
         return $stmt->fetchColumn();
+    }
+
+    public function getCarImages($carId)
+    {
+        $uploadDir = __DIR__ . "/../../public/uploads/cars/{$carId}/";
+        $images = [];
+
+        if (is_dir($uploadDir)) {
+            $files = scandir($uploadDir);
+            foreach ($files as $file) {
+                if (in_array(pathinfo($file, PATHINFO_EXTENSION), ['jpg', 'webp', 'png'])) {
+                    $images[] = "/public/uploads/cars/{$carId}/{$file}";
+                }
+            }
+        }
+        return $images;
+    }
+
+    public function getCarThumbnail($carId)
+    {
+        $uploadDir = __DIR__ . "/../../public/uploads/cars/{$carId}/";
+        $allowedExtensions = ['jpg', 'webp', 'png'];
+
+        if (is_dir($uploadDir)) {
+            $files = scandir($uploadDir);
+            foreach ($files as $file) {
+                if (in_array(pathinfo($file, PATHINFO_EXTENSION), $allowedExtensions)) {
+                    return "/public/uploads/cars/{$carId}/{$file}";
+                }
+            }
+        }
+
+        return null;
+    }
+
+
+//    Funkcje do automatycznego wypełniania bazy danych
+    public function populateCars($numCars)
+    {
+        $stockDir = __DIR__ . "/../../stock/";
+        $carDirBase = __DIR__ . "/../../public/uploads/cars/";
+
+        // Predefiniowane marki samochodów z ich modelami
+        $carBrands = [
+            'Toyota' => ['Corolla', 'Camry', 'RAV4', 'Yaris', 'Prius', 'Highlander', 'Land Cruiser'],
+            'Volkswagen' => ['Golf', 'Passat', 'Tiguan', 'Polo', 'Arteon', 'ID.4', 'Touareg'],
+            'Ford' => ['Focus', 'Fiesta', 'Mondeo', 'Mustang', 'Kuga', 'Puma', 'Explorer'],
+            'BMW' => ['3 Series', '5 Series', 'X3', 'X5', '7 Series', 'i4', 'iX'],
+            'Mercedes-Benz' => ['A-Class', 'C-Class', 'E-Class', 'S-Class', 'GLA', 'GLC', 'EQS'],
+            'Audi' => ['A3', 'A4', 'A6', 'Q3', 'Q5', 'e-tron', 'TT'],
+            'Honda' => ['Civic', 'Accord', 'CR-V', 'HR-V', 'Jazz', 'Pilot', 'e'],
+            'Hyundai' => ['i30', 'Tucson', 'Kona', 'Santa Fe', 'i20', 'IONIQ', 'Elantra'],
+            'Kia' => ['Ceed', 'Sportage', 'Sorento', 'Rio', 'Stonic', 'EV6', 'Niro'],
+            'Skoda' => ['Octavia', 'Superb', 'Kodiaq', 'Karoq', 'Fabia', 'Scala', 'Enyaq']
+        ];
+
+        // Kolory samochodów (po angielsku)
+        $colors = ['Black', 'White', 'Silver', 'Blue', 'Red', 'Gray', 'Green', 'Brown', 'Orange'];
+
+        // Rodzaje paliwa (według opcji z formularza)
+        $fuelTypes = ['Gasoline', 'Diesel', 'Electric', 'Hybrid', 'Other'];
+
+        // Typy transmisji (według opcji z formularza)
+        $transmissions = ['Manual', 'Automatic', 'CVT'];
+
+        // Statusy (według opcji z formularza)
+        $statuses = ['available', 'sold', 'reserved'];
+
+        // Get all stock images
+        $stockImages = array_filter(scandir($stockDir), function($file) use ($stockDir) {
+            return in_array(pathinfo($file, PATHINFO_EXTENSION), ['jpg', 'webp', 'png']);
+        });
+
+        if (empty($stockImages)) {
+            throw new \Exception("No stock images found in the stock directory.");
+        }
+
+        // Cache dla brandId, żeby nie tworzyć tych samych brandów wielokrotnie
+        $brandCache = [];
+        $modelCache = [];
+
+        for ($i = 0; $i < $numCars; $i++) {
+            // Wybierz losową markę
+            $brand = array_keys($carBrands)[array_rand(array_keys($carBrands))];
+
+            // Sprawdź czy marka już istnieje w cache
+            if (!isset($brandCache[$brand])) {
+                $brandCache[$brand] = $this->createRealBrand($brand);
+            }
+            $brandId = $brandCache[$brand];
+
+            // Wybierz losowy model dla danej marki
+            $modelName = $carBrands[$brand][array_rand($carBrands[$brand])];
+            $cacheKey = $brandId . '_' . $modelName;
+
+            if (!isset($modelCache[$cacheKey])) {
+                $modelCache[$cacheKey] = $this->createRealModel($modelName, $brandId);
+            }
+            $modelId = $modelCache[$cacheKey];
+
+            // Losowe dane dla samochodu
+            $year = (int)rand(2010, 2023);
+            $mileage = $year > 2020 ? (int)rand(0, 50000) : (int)rand(10000, 200000);
+            $isNew = $year >= 2022 && $mileage < 10000 ? 1 : 0;
+
+            // Losowy kolor
+            $color = $colors[array_rand($colors)];
+
+            // Losowy rodzaj paliwa
+            $fuelType = $fuelTypes[array_rand($fuelTypes)];
+
+            // Losna transmisja
+            $transmission = $transmissions[array_rand($transmissions)];
+
+            // Cena zależna od roku, marki i stanu
+            $basePrice = rand(10000, 30000);
+            $yearFactor = ($year - 2010) * 1000;
+            $premiumBrands = ['BMW', 'Mercedes-Benz', 'Audi'];
+            $brandFactor = in_array($brand, $premiumBrands) ? 15000 : 0;
+            $newFactor = $isNew ? 10000 : 0;
+            $price = $basePrice + $yearFactor + $brandFactor + $newFactor;
+
+            // Rozmiar silnika i konie mechaniczne
+            $engineSize = rand(10, 50) / 10; // 1.0 - 5.0 L (float)
+            $horsepower = (int)($engineSize * rand(60, 100)); // Konwersja na integer
+
+            // Generuj realistyczny tytuł
+            $title = "$year $brand $modelName $color";
+
+            // Losowy status z większym prawdopodobieństwem 'available'
+            $randStatus = rand(1, 10);
+            $status = $randStatus <= 7 ? 'available' : ($randStatus <= 9 ? 'reserved' : 'sold');
+
+            // Losowy priorytet 1-5
+            $priority = (int)rand(1, 5);
+
+            // Generuj opis
+            $description = "This $year $brand $modelName comes in a beautiful $color color. " .
+                "It has a $engineSize L engine with $horsepower HP and $transmission transmission. " .
+                "Fuel type: $fuelType. " .
+                ($isNew ? "This is a brand new car in excellent condition." :
+                    "This car has $mileage kilometers on it and is in good condition.");
+
+            // Dane głównej tabeli cars
+            $carData = [
+                'modelId' => $modelId,
+                'year' => $year,
+                'price' => $price,
+                'isNew' => $isNew,
+                'priority' => $priority,
+                'status' => $status,
+                'isActive' => true,
+                'title' => $title
+            ];
+
+            // Wstaw dane samochodu do bazy danych
+            $carId = $this->create($carData);
+
+            if ($carId) {
+                // Dane tabeli car_details
+                $carDetailsData = [
+                    'carId' => $carId,
+                    'mileage' => $mileage,
+                    'fuel_type' => $fuelType,
+                    'engine_size' => $engineSize,
+                    'horsepower' => $horsepower,
+                    'transmission' => $transmission,
+                    'color' => $color,
+                    'description' => $description
+                ];
+
+                // Wstaw dane szczegółowe do bazy danych
+                $this->createCarDetails($carDetailsData);
+
+                // Create car image directory
+                $carDir = $carDirBase . $carId . '/';
+                if (!is_dir($carDir)) {
+                    mkdir($carDir, 0777, true);
+                }
+
+                // Copy a random stock image to the car's image directory
+                $randomImage = $stockImages[array_rand($stockImages)];
+                copy($stockDir . $randomImage, $carDir . $randomImage);
+            }
+        }
+    }
+
+    private function createRealBrand($brandName)
+    {
+        $brandRepository = new BrandRepository();
+        return $brandRepository->create($brandName);
+    }
+
+    private function createRealModel($modelName, $brandId)
+    {
+        $modelRepository = new ModelRepository();
+        return $modelRepository->create($modelName, $brandId);
+    }
+
+    private function createCarDetails($carDetailsData)
+    {
+        $query = "INSERT INTO car_details (car_id, mileage, fuel_type, engine_size, horsepower, transmission, color, description) 
+          VALUES (:car_id, :mileage, :fuel_type, :engine_size, :horsepower, :transmission, :color, :description)";
+        $stmt = $this->db->connect()->prepare($query);
+        $stmt->execute([
+            ':car_id' => $carDetailsData['carId'],
+            ':mileage' => $carDetailsData['mileage'],
+            ':fuel_type' => $carDetailsData['fuel_type'],
+            ':engine_size' => $carDetailsData['engine_size'],
+            ':horsepower' => $carDetailsData['horsepower'],
+            ':transmission' => $carDetailsData['transmission'],
+            ':color' => $carDetailsData['color'],
+            ':description' => $carDetailsData['description']
+        ]);
     }
 }

@@ -15,6 +15,14 @@ class BrandRepository extends Repository
         return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
+    public function findLike($text)
+    {
+        $query = "SELECT name FROM brands WHERE name ILIKE :text";
+        $stmt = $this->db->connect()->prepare($query);
+        $stmt->execute([':text' => '%' . $text . '%']);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     public function create($name) {
         // Check if brand already exists by name and return its ID if it does
         $query = "SELECT id FROM brands WHERE LOWER(name) = LOWER(:name)";

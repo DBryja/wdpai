@@ -28,6 +28,19 @@ class AdminController extends AppController {
         $this->render("admin-cars");
     }
 
+    public function admin_populateCars(){
+        if (!$this->isPost()) {
+            header("Location: /admin/cars");
+        }
+
+        $carRepository = new CarRepository();
+        try {
+            $carRepository->populateCars($_POST["count"]);
+        } catch (\Exception $e) {
+            $this->messages[] = $e->getMessage();
+        }
+        header("Location: /admin/cars");
+    }
     public function admin_addCar() {
         if (!$this->isPost()) {
             header("Location: /admin/cars");

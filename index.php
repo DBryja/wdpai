@@ -42,6 +42,8 @@ Routing::post("admin_updateCar", "AdminController");
 Routing::post("admin_deleteCar", "AdminController");
 Routing::post("admin_addUser", "AdminController");
 Routing::post("admin_deleteUser", "AdminController");
+Routing::post("admin_populateCars", "AdminController");
+
 
 // API
 Routing::POST("api_getAllCars", "ApiController");
@@ -51,5 +53,8 @@ Routing::POST("api_getAllCars_withDetails", "ApiController");
 Routing::POST("api_getCarById_withDetails", "ApiController");
 Routing::POST("api_deleteCar", "ApiController");
 Routing::POST("api_getAllUsers", "ApiController");
+Routing::POST("api_getBrandsLike", "ApiController");
+Routing::POST("api_getModelsLike", "ApiController");
+
 
 Routing::run($path);
