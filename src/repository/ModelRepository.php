@@ -29,6 +29,23 @@ class ModelRepository extends Repository
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public function findLikeWithBrand($text, $brand)
+    {
+        $query = "SELECT m.name, COUNT(c.id) as count
+          FROM models m
+          JOIN brands b ON m.brand_id = b.id
+          LEFT JOIN cars c ON m.id = c.model_id
+          WHERE m.name ILIKE :text AND b.name = :brand
+          GROUP BY m.name";
+        $stmt = $this->db->connect()->prepare($query);
+        $stmt->execute([
+            ':text' => '%' . $text . '%',
+            ':brand' => $brand
+        ]);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     public function create($name, $brand_id) {
         // Check if model already exists by name and brand
         $query = "SELECT id FROM models WHERE LOWER(name) = LOWER(:name) AND brand_id = :brand_id";

@@ -211,3 +211,7 @@ label:has(.autocomplete){
     display: block;
     object-fit: cover;
 }
+
+.hidden{
+    display: none;
+}

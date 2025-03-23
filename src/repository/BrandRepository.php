@@ -17,7 +17,12 @@ class BrandRepository extends Repository
 
     public function findLike($text)
     {
-        $query = "SELECT name FROM brands WHERE name ILIKE :text";
+        $query = "SELECT b.name, COUNT(*) as count FROM brands b
+          JOIN models m ON b.id = m.brand_id
+          JOIN cars c ON m.id = c.model_id
+          WHERE b.name ILIKE :text AND c.is_active = true
+          GROUP BY b.name";
+
         $stmt = $this->db->connect()->prepare($query);
         $stmt->execute([':text' => '%' . $text . '%']);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);

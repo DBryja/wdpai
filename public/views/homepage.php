@@ -12,16 +12,20 @@ ComponentLoader::load('header', ['title' => 'Homepage']);
     <div class="cars">
         <aside class="cars-filters">
             <form id="filters-form">
-                <label for="brand">
-                    Brand:
-                    <input type="text" id="brand" name="brand">
-                    <select class="autocomplete" id="brand-list"></select>
-                </label>
-                <label for="model">
-                    Model:
-                    <input type="text" id="model" name="model">
-                    <select class="autocomplete" id="model-list"></select>
-                </label>
+                <div class="autocomplete-wrapper">
+                    <label for="brand">
+                        Brand:
+                        <input type="text" id="brand" name="brand" autocomplete="off">
+                    </label>
+                    <div tabindex="-1" id="brand-list" class="autocomplete-list"></div>
+                </div>
+                <div class="autocomplete-wrapper disabled">
+                    <label for="model" >
+                        Model:
+                        <input disabled type="text" id="model" name="model" autocomplete="off">
+                    </label>
+                    <div tabindex="-1" id="model-list" class="autocomplete-list"></div>
+                </div>
                 <label for="price">
                     Price:
                     <input type="number" id="price-min" name="price-min" min="0" max="100000" placeholder="Min Price">
@@ -57,6 +61,10 @@ ComponentLoader::load('header', ['title' => 'Homepage']);
     </div>
 </main>
 <script>
+//    TODO:
+//          Dodać sortowania po cenie i roku
+//          Dodać zaawansowane filtry
+//          Dodać paginację
     const filtersForm = document.getElementById('filters-form');
     const carsList = document.querySelector('.cars-list');
 
@@ -74,7 +82,7 @@ ComponentLoader::load('header', ['title' => 'Homepage']);
         carsList.innerHTML = cars.map(car => `
             <a href="/car?id=${car.id}" class="car-card">
                 <div class="car-card__image">
-                    ${car.images.map(image => `<img src="${image}" alt=""/>`).join('')}
+                ${car.images.length ? `<img src="${car.images[0]}" alt="${car.title}"/>` : ''}
                 </div>
                 <h3 class="car-card__title">${car.title}</h3>
                 <div class="car-card__details">
@@ -91,3 +99,4 @@ ComponentLoader::load('header', ['title' => 'Homepage']);
 <?php
 ComponentLoader::load('footer');
 ?>
+

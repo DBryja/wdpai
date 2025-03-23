@@ -215,7 +215,7 @@ class ApiController extends AppController{
             $brandsRepository = new BrandRepository();
             $brands = $brandsRepository->findLike($query);
             $brandNames = array_map(function($brand) {
-                return $brand['name'];
+                return $brand['name']."(".$brand['count'].")";
             }, $brands);
 
             header("Content-Type: application/json");
@@ -239,11 +239,22 @@ class ApiController extends AppController{
             }
 
             $query = $decoded['query'];
+            $brand = $decoded['brand'] ?? null;
             $modelsRepository = new ModelRepository();
-            $models = $modelsRepository->findLike($query);
-            $modelNames = array_map(function($model) {
-                return $model['name'];
-            }, $models);
+
+            if ($brand) {
+                $models = $modelsRepository->findLikeWithBrand($query, $brand);
+            } else {
+                $models = $modelsRepository->findLike($query);
+            }
+
+            $filteredModels = array_filter($models, function($model) {
+                return $model['count'] > 0;
+            });
+
+            $modelNames = array_values(array_map(function($model) {
+                return $model['name']."(".$model['count'].")";
+            }, $filteredModels));
 
             header("Content-Type: application/json");
             http_response_code(200);
