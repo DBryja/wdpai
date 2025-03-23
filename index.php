@@ -7,10 +7,6 @@ use utils\LoginSecurity;
 $path = str_replace('/', '_', trim($_SERVER['REQUEST_URI'], '/'));
 $path = parse_url($path, PHP_URL_PATH);
 
-if ($path === '') {
-    $path = 'index';
-}
-
 // Dość prymitywna, ale w miarę skuteczna metoda autoryzacji -
 // wszystie ścieżki zaczynające się od /admin/ wymagają ustawionego $_SESSION['user_id']
 // z wyjątkiem /adminLogin, który służy do logowania

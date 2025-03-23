@@ -3,7 +3,7 @@ require_once __DIR__."/../utils/ComponentLoader.php";
 
 use repository\CarRepository;
 $carRepository = new CarRepository();
-$cars = $carRepository->findAll();
+$cars = $carRepository->findAll(9);
 
 ComponentLoader::load('header', ['title' => 'Homepage']);
 ?>
@@ -12,6 +12,8 @@ ComponentLoader::load('header', ['title' => 'Homepage']);
     <div class="cars">
         <aside class="cars-filters">
             <form id="filters-form">
+                <input type="hidden" id="current-page" name="page" value="1">
+                <input type="hidden" id="current-page" name="per-page" value="9">
                 <div class="autocomplete-wrapper">
                     <label for="brand">
                         Brand:
@@ -58,43 +60,14 @@ ComponentLoader::load('header', ['title' => 'Homepage']);
                 </a>
             <?php endforeach; ?>
         </div>
+        <div id="loader">Loading...</div>
     </div>
 </main>
 <script>
-//    TODO:
-//          Dodać sortowania po cenie i roku
-//          Dodać zaawansowane filtry
-//          Dodać paginację
-    const filtersForm = document.getElementById('filters-form');
-    const carsList = document.querySelector('.cars-list');
-
-    filtersForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(filtersForm);
-        const response = await fetch('/api/getCarsByAttributes', {
-            method: 'POST',
-            body: JSON.stringify(Object.fromEntries(formData)),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const cars = await response.json();
-        carsList.innerHTML = cars.map(car => `
-            <a href="/car?id=${car.id}" class="car-card">
-                <div class="car-card__image">
-                ${car.images.length ? `<img src="${car.images[0]}" alt="${car.title}"/>` : ''}
-                </div>
-                <h3 class="car-card__title">${car.title}</h3>
-                <div class="car-card__details">
-                    <p class="car-card__price">Price: ${car.price}</p>
-                    <p class="car-card__year">Year: ${car.year}</p>
-                    <p class="car-card__isNew">Is New: ${car.isNew ? 'Yes' : 'No'}</p>
-                </div>
-            </a>
-        `).join('');
-    });
+//    TODO: Dodać sortowania po cenie i roku
 </script>
 <script src="/public/js/autocomplete.js"></script>
+<script src="/public/js/infiniteScroll.js"></script>
 
 <?php
 ComponentLoader::load('footer');

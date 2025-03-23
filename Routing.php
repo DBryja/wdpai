@@ -16,7 +16,7 @@ class Routing {
     }
 
     public static function run($url) {
-        $action = explode("/", $url)[0];
+        $action = explode("/", $url)[0] ?: "index";
 
         if(!array_key_exists($action, self::$routes)){
             die("Wrong url!");

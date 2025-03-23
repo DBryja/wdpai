@@ -40,7 +40,6 @@ class CarRepository extends Repository
         }
     }
 
-
     public function find($id)
     {
         $query = "SELECT * FROM cars WHERE id = :id";
@@ -74,18 +73,19 @@ class CarRepository extends Repository
             return [];
         }
     }
-    public function findByAttributes($attributes): array
+    public function findByAttributes($attributes, $page = 1, $perPage = 9): array
     {
+        $offset = ($page - 1) * $perPage;
         $query = "
-        SELECT cars.*, brands.name as brand_name, models.name as model_name
-        FROM cars
-        JOIN models ON cars.model_id = models.id
-        JOIN brands ON models.brand_id = brands.id
-        WHERE 1=1
+    SELECT cars.*, brands.name as brand_name, models.name as model_name
+    FROM cars
+    JOIN models ON cars.model_id = models.id
+    JOIN brands ON models.brand_id = brands.id
+    WHERE 1=1
     ";
         $params = [];
 
-        if(!empty($attributes["isNew"])){
+        if (!empty($attributes["isNew"])) {
             $query .= " AND cars.is_new = :is_new";
             $params[':is_new'] = true;
         }
@@ -114,9 +114,16 @@ class CarRepository extends Repository
             $params[':year_max'] = $attributes['year-max'];
         }
 
+        $query .= " LIMIT :limit OFFSET :offset";
+        $params[':limit'] = $perPage;
+        $params[':offset'] = $offset;
+
         try {
             $stmt = $this->db->connect()->prepare($query);
-            $stmt->execute($params);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value, is_int($value) ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+            }
+            $stmt->execute();
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\PDOException $e) {
             return [];

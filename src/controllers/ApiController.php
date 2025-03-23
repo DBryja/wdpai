@@ -58,8 +58,11 @@ class ApiController extends AppController{
             $content = trim(file_get_contents("php://input"));
             $decoded = json_decode($content, true);
 
+            $perPage = $decoded['per-page'] ?: 9;
+            $page = $decoded['page'] ?: 1;
+
             $carRepository = new CarRepository();
-            $cars = $carRepository->findByAttributes($decoded);
+            $cars = $carRepository->findByAttributes($decoded, $page, $perPage);
 
             foreach ($cars as &$car) {
                 $car['images'] = $carRepository->getCarImages($car['id']);
