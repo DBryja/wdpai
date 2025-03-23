@@ -3,7 +3,7 @@ const modelsContainer = document.getElementById('model-list');
 const brandInput = document.getElementById('brand');
 const modelInput = document.getElementById('model');
 const modelWrapper = document.querySelector('#model').closest('.autocomplete-wrapper');
-
+const brandWrapper = document.querySelector('#brand').closest('.autocomplete-wrapper');
 async function fetchAndUpdateOptions(query, url, container, input, brand = '') {
     const response = await fetch(url, {
         method: 'POST',
@@ -77,7 +77,18 @@ modelInput.addEventListener('focus', (event) => {
     modelsContainer.classList.remove('hidden');
 });
 
-filtersForm.addEventListener('keydown', (event) => {
+function hideAutocomplete(event) {
+    if (!modelWrapper.contains(event.target)) {
+        modelsContainer.classList.add('hidden');
+    }
+    if (!brandWrapper.contains(event.target)) {
+        brandsContainer.classList.add('hidden');
+    }
+}
+window.addEventListener('click', hideAutocomplete);
+window.addEventListener('focusin', hideAutocomplete);
+
+document.getElementById('filters-form').addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && event.target.type !== 'submit') {
         event.preventDefault();
     }
