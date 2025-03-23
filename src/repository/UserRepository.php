@@ -74,4 +74,12 @@ class UserRepository extends Repository
         $stmt = $this->db->connect()->prepare('DELETE FROM public.users WHERE id = :id');
         $stmt->execute([':id' => $id]);
     }
+
+    public function countAdmins()
+    {
+        $stmt = $this->db->connect()->prepare('SELECT COUNT(*) FROM public.users WHERE role = :role');
+        $roleName = Role::ADMIN->value;
+        $stmt->execute([':role' => $roleName]);
+        return $stmt->fetchColumn();
+    }
 }

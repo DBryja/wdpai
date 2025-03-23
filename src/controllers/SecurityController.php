@@ -1,5 +1,6 @@
 <?php
 namespace controllers;
+use models\Role;
 use repository\UserRepository;
 use utils\LoginSecurity;
 
@@ -15,6 +16,17 @@ class SecurityController extends AppController
         $password = $_POST['password'];
 
         $userRepository = new UserRepository();
+
+        // Check if there are any existing admin users
+        if ($userRepository->countAdmins() === 0) {
+            // No admin exists, create a new admin user
+            $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+            $userRepository->create($email, $hashedPassword, ROLE::ADMIN);
+
+            $this->messages[] = "Admin user created successfully. Please log in.";
+            return $this->render("admin-login", ['messages' => $this->messages]);
+        }
+
         if ($userRepository->comparePassword($email, $password)) {
             $user = $userRepository->getUser($email);
 
