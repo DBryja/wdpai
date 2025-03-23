@@ -3,7 +3,7 @@ require_once __DIR__."/../utils/ComponentLoader.php";
 
 use repository\CarRepository;
 $carRepository = new CarRepository();
-$cars = $carRepository->findAll(9);
+$cars = $carRepository->findByAttributes([], 1, 9);
 
 ComponentLoader::load('header', ['title' => 'Homepage']);
 ?>
@@ -42,6 +42,21 @@ ComponentLoader::load('header', ['title' => 'Homepage']);
                     Is New:
                     <input type="checkbox" id="isNew" name="isNew">
                 </label>
+
+                <label for="sort">
+                    Sort by:
+                    <select id="sort" name="sort">
+                        <option value="">Default</option>
+                        <option value="price-asc">Price Ascending</option>
+                        <option value="price-desc">Price Descending</option>
+                        <option value="year-asc">Year Ascending</option>
+                        <option value="year-desc">Year Descending</option>
+                        <option value="mileage-asc">Lowest Mileage</option>
+                        <option value="mileage-desc">Highest Mileage</option>
+                        <option value="power-asc">Lowest Engine Power</option>
+                        <option value="power-desc">Highest Engine Power</option>
+                    </select>
+                </label>
                 <input type="submit" value="Apply Filters">
             </form>
         </aside>
@@ -53,9 +68,10 @@ ComponentLoader::load('header', ['title' => 'Homepage']);
                     </div>
                     <h3 class="car-card__title"><?= $car['title'] ?></h3>
                     <div class="car-card__details">
-                        <p class="car-card__price">Price: <?= $car['price'] ?></p>
-                        <p class="car-card__year">Year: <?= $car['year'] ?></p>
-                        <p class="car-card__isNew">Is New: <?= $car['is_new'] ? 'Yes' : 'No' ?></p>
+                        <p class="car-card__price"><?= $car['price'] ?>$</p>
+                        <p class="car-card__year">Y: <?= $car['year'] ?></p>
+                        <p class="car-card__mileage">Mil: <?= $car['mileage'] ?></p>
+                        <p class="car-card__hp">HP: <?= $car['hp'] ?></p>
                     </div>
                 </a>
             <?php endforeach; ?>
@@ -63,9 +79,6 @@ ComponentLoader::load('header', ['title' => 'Homepage']);
         <div id="loader">Loading...</div>
     </div>
 </main>
-<script>
-//    TODO: Dodać sortowania po cenie i roku
-</script>
 <script src="/public/js/autocomplete.js"></script>
 <script src="/public/js/infiniteScroll.js"></script>
 

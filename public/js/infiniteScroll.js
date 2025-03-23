@@ -30,9 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <h3 class="car-card__title">${car.title}</h3>
                     <div class="car-card__details">
-                        <p class="car-card__price">Price: ${car.price}</p>
-                        <p class="car-card__year">Year: ${car.year}</p>
-                        <p class="car-card__isNew">Is New: ${car.isNew ? 'Yes' : 'No'}</p>
+                        <p class="car-card__price">${car.price}$</p>
+                        <p class="car-card__year">Y: ${car.year}</p>
+                        <p class="car-card__mileage">Mil: ${car.mileage}</p>
+                        <p class="car-card__hp">HP: ${car.hp}</p>
                     </div>
                 </a>
             `).join('');

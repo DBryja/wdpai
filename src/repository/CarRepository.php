@@ -77,10 +77,11 @@ class CarRepository extends Repository
     {
         $offset = ($page - 1) * $perPage;
         $query = "
-    SELECT cars.*, brands.name as brand_name, models.name as model_name
+    SELECT cars.*, brands.name as brand_name, models.name as model_name, car_details.mileage as mileage, car_details.horsepower as hp
     FROM cars
     JOIN models ON cars.model_id = models.id
     JOIN brands ON models.brand_id = brands.id
+    JOIN car_details ON cars.id = car_details.car_id
     WHERE 1=1
     ";
         $params = [];
@@ -113,6 +114,36 @@ class CarRepository extends Repository
             $query .= " AND cars.year <= :year_max";
             $params[':year_max'] = $attributes['year-max'];
         }
+        if (!empty($attributes['sort'])) {
+            switch ($attributes['sort']) {
+                case 'price-asc':
+                    $query .= " ORDER BY cars.price ASC";
+                    break;
+                case 'price-desc':
+                    $query .= " ORDER BY cars.price DESC";
+                    break;
+                case 'year-asc':
+                    $query .= " ORDER BY cars.year ASC";
+                    break;
+                case 'year-desc':
+                    $query .= " ORDER BY cars.year DESC";
+                    break;
+                case 'mileage-asc':
+                    $query .= " ORDER BY car_details.mileage ASC";
+                    break;
+                case 'mileage-desc':
+                    $query .= " ORDER BY car_details.mileage DESC";
+                    break;
+                case 'power-asc':
+                    $query .= " ORDER BY car_details.horsepower ASC";
+                    break;
+                case 'power-desc':
+                    $query .= " ORDER BY car_details.horsepower DESC";
+                    break;
+            }
+        } else {
+            $query .= " ORDER BY cars.priority DESC";
+        }
 
         $query .= " LIMIT :limit OFFSET :offset";
         $params[':limit'] = $perPage;
@@ -130,7 +161,7 @@ class CarRepository extends Repository
         }
     }
 
-    public function findAllWithDetails(): array
+    public function findAllWithDetails($limit=null): array
     {
         $query = "
         SELECT 
