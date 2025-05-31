@@ -44,6 +44,12 @@ class UserRepository extends Repository
         $stmt = $this->db->connect()->prepare('SELECT password FROM public.users WHERE email = :email');
         $stmt->execute([':email' => $email]);
         $hash = $stmt->fetchColumn();
+
+        error_log("Password: " . $password);
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        error_log("hashedPassword: " . $hashedPassword);
+        error_log("Hash: " . $hash);
+        
         return password_verify($password, $hash);
     }
 

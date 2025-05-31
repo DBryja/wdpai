@@ -26,11 +26,11 @@ $roles = Role::toArray();
                     <h3 id="user-modal-title">ADD NEW USER</h3>
                     <form class="dashboard-modal-form" action="/admin/addUser" method="POST">
                         <label for="user-email">Email:
-                            <input type="email" name="email" id="user-email" required>
+                            <input type="email" name="email" id="user-email" required minlength="3">
                         </label>
 
                         <label for="user-password">Password:
-                            <input type="password" name="password" id="user-password" required>
+                            <input type="password" name="password" id="user-password" required minlength="6">
                         </label>
 
                         <label for="user-role">Role:

@@ -2,6 +2,7 @@
 namespace controllers;
 class AppController {
     private mixed $request;
+    public $messages = [];
 
     public function __construct(){
         $this->request = $_SERVER['REQUEST_METHOD'];

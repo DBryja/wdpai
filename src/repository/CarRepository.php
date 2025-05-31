@@ -498,6 +498,7 @@ class CarRepository extends Repository
 
             // Wstaw dane samochodu do bazy danych
             $carId = $this->create($carData);
+            error_log("\033[35mCar nr: $i, ID: $carId, Title: $title\033[0m");
 
             if ($carId) {
                 // Dane tabeli car_details
@@ -513,7 +514,8 @@ class CarRepository extends Repository
                 ];
 
                 // Wstaw dane szczegółowe do bazy danych
-                $this->createCarDetails($carDetailsData);
+                $details_id = $this->createCarDetails($carDetailsData);
+                error_log("\033[35mCar nr: $i, ID: $carId, Title: $title, DetailsID: $details_id\033[0m");
 
                 // Create car image directory
                 $carDir = $carDirBase . $carId . '/';
@@ -542,8 +544,8 @@ class CarRepository extends Repository
 
     private function createCarDetails($carDetailsData)
     {
-        $query = "INSERT INTO car_details (car_id, mileage, fuel_type, engine_size, horsepower, transmission, color, description) 
-          VALUES (:car_id, :mileage, :fuel_type, :engine_size, :horsepower, :transmission, :color, :description)";
+        $query = "INSERT INTO car_details (car_id, mileage, fuel_type, engine_size, horsepower, transmission, color, description)
+      VALUES (:car_id, :mileage, :fuel_type, :engine_size, :horsepower, :transmission, :color, :description) RETURNING id";
         $stmt = $this->db->connect()->prepare($query);
         $stmt->execute([
             ':car_id' => $carDetailsData['carId'],
@@ -555,5 +557,10 @@ class CarRepository extends Repository
             ':color' => $carDetailsData['color'],
             ':description' => $carDetailsData['description']
         ]);
+        if ($stmt->errorCode() !== '00000') {
+            error_log("\033[35mError creating car details: " . implode(", ", $stmt->errorInfo()).'\033[0m');
+            return null;
+        }
+        return $stmt->fetchColumn();
     }
 }

@@ -3,6 +3,7 @@ namespace controllers;
 
 use Database;
 use models\Car;
+use models\Role;
 use repository\CarRepository;
 use repository\CarDetailRepository;
 use repository\BrandRepository;
@@ -13,8 +14,6 @@ class AdminController extends AppController {
     const MAX_FILE_SIZE = 1024 * 1024 * 10;
     const SUPPORTED_TYPES = ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'];
     const UPLOAD_DIRECTORY = "/../public/uploads/";
-
-    protected $messages = [];
 
     public function admin() {
         $this->render("admin");
@@ -224,6 +223,47 @@ class AdminController extends AppController {
 
         header("Location: /admin/cars");
         return $this->render("admin-cars", ["messages" => ["Car updated successfully!"]]);
+    }
+
+    public function admin_addUser() {
+        if (!$this->isPost()) {
+            header("Location: /admin/users");
+        }
+        $userRepository = new UserRepository();
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $role = $_POST['role'] ?? 'user';
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->messages[] = "Invalid email address.";
+            return $this->render("admin-users", ['messages' => $this->messages]);
+        }
+        if (strlen($password) < 4) {
+            $this->messages[] = "Password must be at least 4 characters.";
+            return $this->render("admin-users", ['messages' => $this->messages]);
+        }
+        if (!in_array($role, Role::toArray(), true)) {
+            $this->messages[] = "Invalid role.";
+            return $this->render("admin-users", ['messages' => $this->messages]);
+        }
+        $userRepository->create($email, $password, $role);
+        $this->messages[] = "User added successfully.";
+        header("Location: /admin/users");
+    }
+
+    public function admin_deleteUser() {
+        if (!$this->isPost()) {
+            header("Location: /admin/users");
+        }
+        $userRepository = new UserRepository();
+        $id = $_POST['user_id'] ?? null;
+        if (!$id) {
+            $this->messages[] = "User ID is required.";
+            return $this->render("admin-users", ['messages' => $this->messages]);
+        }
+        $userRepository->delete($id);
+        $this->messages[] = "User deleted successfully.";
+        header("Location: /admin/users");
     }
 
     private function validate_addCar($data, $isUpdate = false) {

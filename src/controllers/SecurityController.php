@@ -20,8 +20,7 @@ class SecurityController extends AppController
         // Check if there are any existing admin users
         if ($userRepository->countAdmins() === 0) {
             // No admin exists, create a new admin user
-            $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-            $userRepository->create($email, $hashedPassword, ROLE::ADMIN);
+            $userRepository->create($email, $password, ROLE::ADMIN->value);
 
             $this->messages[] = "Admin user created successfully. Please log in.";
             return $this->render("admin-login", ['messages' => $this->messages]);
