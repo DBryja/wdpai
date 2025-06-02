@@ -52,3 +52,98 @@ CREATE TABLE images (
     image_url TEXT NOT NULL,
     alt_text VARCHAR(255)
 );
+
+-- Car Views for Database Optimization
+
+CREATE OR REPLACE VIEW cars_with_model AS
+SELECT
+    cars.id,
+    cars.model_id,
+    cars.user_id,
+    cars.title,
+    cars.year,
+    cars.price,
+    cars.priority,
+    cars.status,
+    cars.is_active,
+    cars.is_new,
+    cars.added_at,
+    models.name as model_name
+FROM cars
+JOIN models ON cars.model_id = models.id;
+
+CREATE OR REPLACE VIEW cars_full_details AS
+SELECT 
+    cars.id,
+    cars.model_id,
+    cars.user_id,
+    cars.title,
+    cars.year,
+    cars.price,
+    cars.priority,
+    cars.status,
+    cars.is_active,
+    cars.is_new,
+    cars.added_at,
+    car_details.mileage,
+    car_details.fuel_type,
+    car_details.engine_size,
+    car_details.horsepower,
+    car_details.transmission,
+    car_details.color,
+    car_details.description,
+    brands.name as brand_name,
+    models.name as model_name
+FROM cars
+JOIN car_details ON cars.id = car_details.car_id
+JOIN models ON cars.model_id = models.id
+JOIN brands ON models.brand_id = brands.id;
+
+CREATE OR REPLACE VIEW cars_search_view AS
+SELECT 
+    cars.id,
+    cars.model_id,
+    cars.user_id,
+    cars.title,
+    cars.year,
+    cars.price,
+    cars.priority,
+    cars.status,
+    cars.is_active,
+    cars.is_new,
+    cars.added_at,
+    brands.name as brand_name,
+    models.name as model_name,
+    car_details.mileage,
+    car_details.horsepower as hp
+FROM cars
+JOIN models ON cars.model_id = models.id
+JOIN brands ON models.brand_id = brands.id
+JOIN car_details ON cars.id = car_details.car_id;
+
+CREATE OR REPLACE VIEW car_detail_view AS
+SELECT
+    cars.id,
+    cars.model_id,
+    cars.user_id,
+    cars.title,
+    cars.year,
+    cars.price,
+    cars.priority,
+    cars.status,
+    cars.is_active,
+    cars.is_new,
+    cars.added_at,
+    car_details.color,
+    car_details.description,
+    car_details.engine_size,
+    car_details.fuel_type,
+    car_details.horsepower,
+    car_details.mileage,
+    car_details.transmission,
+    brands.name as brand_name,
+    models.name as model_name
+FROM cars
+JOIN car_details ON cars.id = car_details.car_id
+JOIN models ON cars.model_id = models.id
+JOIN brands ON models.brand_id = brands.id;
