@@ -45,6 +45,7 @@ CREATE TABLE car_details (
     color VARCHAR(50),
     description TEXT
 );
+ALTER TABLE car_details ADD CONSTRAINT unique_car_id UNIQUE (car_id);
 
 CREATE TABLE images (
     id SERIAL PRIMARY KEY,
@@ -53,7 +54,17 @@ CREATE TABLE images (
     alt_text VARCHAR(255)
 );
 
--- Car Views for Database Optimization
+CREATE TABLE tags (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT
+);
+
+CREATE TABLE car_tags (
+    car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
+    tag_id INT REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (car_id, tag_id)
+);
 
 CREATE OR REPLACE VIEW cars_with_model AS
 SELECT

@@ -46,5 +46,5 @@ Pozwala użytkownikom przeglądać, filtrować i sortować samochody na podstawi
 - **Relacje bazodanowe**:
     - 1:1 (Car -> CarDetails)
     - 1:N (Models -> Car)
-    - N:M (Nie zaimplementowano, ale można dodać np. Car -> CarTags lub Car -> Colors).
+    - N:M (Car <- car_tags -> Tags)
 - **Loader komponentów**: Pośrednik umożliwiający wczytywanie komponentów z przekazywaniem argumentów, np. tytułu do nagłówka.  
