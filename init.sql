@@ -158,3 +158,89 @@ FROM cars
 JOIN car_details ON cars.id = car_details.car_id
 JOIN models ON cars.model_id = models.id
 JOIN brands ON models.brand_id = brands.id;
+
+CREATE OR REPLACE VIEW cars_with_tags AS
+SELECT 
+    c.id,
+    c.title,
+    c.year,
+    c.price,
+    c.priority,
+    c.status,
+    c.is_active,
+    c.is_new,
+    b.name as brand_name,
+    m.name as model_name,
+    cd.horsepower,
+    cd.mileage,
+    STRING_AGG(t.name, ', ' ORDER BY t.name) as tags
+FROM cars c
+JOIN models m ON c.model_id = m.id
+JOIN brands b ON m.brand_id = b.id
+LEFT JOIN car_details cd ON c.id = cd.car_id
+LEFT JOIN car_tags ct ON c.id = ct.car_id
+LEFT JOIN tags t ON ct.tag_id = t.id
+GROUP BY c.id, c.title, c.year, c.price, c.priority, c.status, c.is_active, c.is_new, 
+         b.name, m.name, cd.horsepower, cd.mileage
+ORDER BY c.priority DESC, c.added_at DESC;
+
+INSERT INTO tags (name, description) VALUES 
+('sport', 'High performance sports cars'),
+('luxury', 'Luxury vehicles with premium features'),
+('electric', 'Electric vehicles'),
+('hybrid', 'Hybrid vehicles'),
+('suv', 'Sport Utility Vehicles'),
+('sedan', 'Sedan body type'),
+('compact', 'Compact cars'),
+('economy', 'Economical fuel-efficient cars')
+ON CONFLICT (name) DO NOTHING;
+
+-- Funkcja do automatycznego ustawiania priorytetu na podstawie statusu i parametrów
+CREATE OR REPLACE FUNCTION auto_set_priority()
+RETURNS TRIGGER AS $$
+DECLARE
+    calculated_priority INT := 0;
+    car_details_rec RECORD;
+    brand_name VARCHAR;
+BEGIN
+    SELECT * INTO car_details_rec 
+    FROM car_details 
+    WHERE car_id = NEW.id;
+    
+    SELECT b.name INTO brand_name
+    FROM brands b
+    JOIN models m ON b.id = m.brand_id
+    WHERE m.id = NEW.model_id;
+    
+    CASE NEW.status
+        WHEN 'available' THEN calculated_priority := 3;
+        WHEN 'reserved' THEN calculated_priority := 2;
+        WHEN 'sold' THEN calculated_priority := 1;
+        ELSE calculated_priority := 1;
+    END CASE;
+    
+    IF NEW.is_new = TRUE THEN
+        calculated_priority := calculated_priority + 1;
+    END IF;
+    
+    IF brand_name IN ('BMW', 'Mercedes-Benz', 'Audi', 'Porsche', 'Ferrari', 'Lamborghini') THEN
+        calculated_priority := calculated_priority + 1;
+    END IF;
+    
+    IF car_details_rec.horsepower > 300 THEN
+        calculated_priority := calculated_priority + 1;
+    END IF;
+    
+    calculated_priority := GREATEST(1, LEAST(5, calculated_priority));
+    
+    NEW.priority := calculated_priority;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Wyzwalacz na automatyczne ustawianie priorytetu przy wstawianiu/aktualizacji samochodu
+CREATE OR REPLACE TRIGGER trigger_auto_priority
+    BEFORE INSERT OR UPDATE ON cars
+    FOR EACH ROW
+    EXECUTE FUNCTION auto_set_priority();
