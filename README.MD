@@ -8,6 +8,32 @@ Pozwala użytkownikom przeglądać, filtrować i sortować samochody na podstawi
 
 ## Informacje Techniczne
 
+### Instalacja
+
+1. **Konfiguracja bazy danych**  
+   Utwórz plik `config.php` w katalogu głównym projektu z następującą konfiguracją:
+   ```php
+   <?php
+   
+   const USERNAME = 'docker';
+   const PASSWORD = 'docker';
+   const PORT = '5433';
+   const HOST = '192.168.1.100'; // adres IP Twojego urządzenia
+   const DATABASE = 'db';
+   ```
+
+2. **Uruchomienie aplikacji**  
+   Wykonaj polecenie w terminalu:
+   ```bash
+   docker compose up --build
+   ```
+
+3. **Pierwsza konfiguracja**
+   - Przejdź do strony `/adminLogin` aby utworzyć pierwsze konto administratora
+   - Po zalogowaniu, odwiedź `/admin/cars` aby wygenerować przykładowe dane samochodów
+
+#### Dostęp do aplikacji
+Po pomyślnym uruchomieniu aplikacja będzie dostępna pod adresem określonym w konfiguracji Docker Compose.
 ### Zbudowany z użyciem
 - PHP
 - PostgreSQL
@@ -41,10 +67,13 @@ Pozwala użytkownikom przeglądać, filtrować i sortować samochody na podstawi
 - **Server Side Rendering**: Pierwsze zapytanie na stronie głównej jest renderowane po stronie serwera.
 - **Client Side Rendering**: Implementacja filtrowania, sortowania, paginacji oraz infinite scroll po stronie klienta.
 - **REST API**: API do pobierania i modyfikowania danych (dostępne pod ścieżką /api/), część endpointów wymaga nagłówka Admin-Email i Session-Token.
+- **Loader komponentów**: Pośrednik umożliwiający wczytywanie komponentów z przekazywaniem argumentów, np. tytułu do nagłówka.  
 - **Autoryzacja**: Logowanie do panelu administratora, wylogowanie, zabezpieczenie ścieżki /admin/ (zarówno dla metod POST, jak i GET).
 - **CRUD**: Dodawanie, edytowanie, usuwanie samochodów.
 - **Relacje bazodanowe**:
     - 1:1 (Car -> CarDetails)
     - 1:N (Models -> Car)
     - N:M (Car <- car_tags -> Tags)
-- **Loader komponentów**: Pośrednik umożliwiający wczytywanie komponentów z przekazywaniem argumentów, np. tytułu do nagłówka.  
+
+### Diagram ERD
+![Diagram ERD](model_ERD.png)
