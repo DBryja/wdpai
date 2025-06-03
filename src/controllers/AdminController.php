@@ -34,11 +34,19 @@ class AdminController extends AppController {
 
         $carRepository = new CarRepository();
         try {
+            $count = isset($_POST["count"]) ? (int)$_POST["count"] : 0;
+            if (!is_numeric($count) || $count < 1) {
+                throw new \Exception("Invalid count value. It must be a positive integer.");
+            }
             $carRepository->populateCars($_POST["count"]);
         } catch (\Exception $e) {
             $this->messages[] = $e->getMessage();
+            return $this->render("admin-cars", ["messages" => $this->messages]);
         }
-        header("Location: /admin/cars");
+
+        return $this->render("admin-cars", [
+            "messages" => ["Successfully populated {$count} cars!"]
+        ]);
     }
     public function admin_addCar() {
         if (!$this->isPost()) {
@@ -56,83 +64,90 @@ class AdminController extends AppController {
             ]);
         }
 
-        // Handle Brand selection/creation
-        $brandName = $_POST['brand'];
-        $brandId = $brandsRepository->create($brandName);
-        if (!$brandId) {
-            $this->messages[] = "Failed to create brand.";
+        // Get database connection and start transaction
+        $db = new \Database();
+        $conn = $db->connect();
+        
+        try {
+            $conn->beginTransaction();
+
+            // Handle Brand selection/creation
+            $brandName = $_POST['brand'];
+            $brandId = $brandsRepository->create($brandName);
+            if (!$brandId) {
+                throw new \Exception("Failed to create brand.");
+            }
+
+            // Handle Model selection/creation
+            $modelName = $_POST['model'];
+            $modelId = $modelsRepository->create($modelName, $brandId);
+            if (!$modelId) {
+                throw new \Exception("Failed to create model.");
+            }
+
+            $isNew = isset($_POST['isNew']) ? 1 : 0;
+            $isActive = isset($_POST['isActive']) ? 1 : 0;
+
+            // Adding to `cars` table
+            $carId = $carRepository->create([
+                "title" => $_POST['title'],
+                'modelId' => $modelId,
+                'year' => $_POST['year'],
+                'price' => $_POST['price'],
+                'isNew' => $isNew,
+                'priority' => $_POST['priority'],
+                'status' => $_POST['status'],
+                'isActive' => $isActive,
+            ]);
+            if (!$carId) {
+                throw new \Exception("Failed to create Car.");
+            }
+
+            // Adding to `car_details`
+            $detailsId = $carDetailsRepository->createCarDetails([
+                'carId' => $carId,
+                'mileage' => $_POST['mileage'],
+                'fuel_type' => $_POST['fuel_type'],
+                'engine_size' => $_POST['engine_size'],
+                'horsepower' => $_POST['horsepower'],
+                'transmission' => $_POST['transmission'],
+                'color' => $_POST['color'],
+                'description' => $_POST['description'],
+            ]);
+            if (!$detailsId) {
+                throw new \Exception("Failed to create Car Details.");
+            }
+
+            // Create upload directory and save images
+            $uploadDir = "public/uploads/cars/{$carId}/";
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $uploadedImages = $this->saveCarImages($_FILES['images'], $uploadDir);
+            if (!$uploadedImages) {
+                throw new \Exception("Failed to save images.");
+            }
+
+            // Commit transaction if everything is successful
+            $conn->commit();
+            
+            header("Location: /admin/cars");
+            return $this->render("admin-cars", ["messages" => ["Car added successfully!"]]);
+
+        } catch (\Exception $e) {
+            $conn->rollBack();
+            
+            if (isset($carId)) {
+                $uploadDir = "public/uploads/cars/{$carId}/";
+                if (is_dir($uploadDir)) {
+                    $this->deleteDirectory($uploadDir);
+                }
+            }
+            
+            $this->messages[] = $e->getMessage();
             return $this->render("admin-cars", ['messages' => $this->messages]);
         }
-
-        // Handle Model selection/creation
-        $modelName = $_POST['model'];
-        $modelId = $modelsRepository->create($modelName, $brandId);
-        if (!$modelId) {
-            $brandsRepository->deepDelete($brandId);
-            $this->messages[] = "Failed to create model.";
-            return $this->render("admin-cars", ['messages' => $this->messages]);
-        }
-
-        $isNew = isset($_POST['isNew']) ? 1 : 0;
-        $isActive = isset($_POST['isActive']) ? 1 : 0;
-
-        // Adding to `cars` table
-        $carId = $carRepository->create([
-            "title" => $_POST['title'],
-            'modelId' => $modelId,
-            'year' => $_POST['year'],
-            'price' => $_POST['price'],
-            'isNew' => $isNew,
-            'priority' => $_POST['priority'],
-            'status' => $_POST['status'],
-            'isActive' => $isActive,
-        ]);
-        if (!$carId) {
-            $modelsRepository->deepDelete($modelId);
-            $brandsRepository->deepDelete($brandId);
-            $this->messages[] = "Failed to create Car.";
-            return $this->render("admin-cars", ['messages' => $this->messages]);
-        }
-
-        $uploadDir = "public/uploads/cars/{$carId}/";
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        // Adding to `car_details`
-        $detailsId = $carDetailsRepository->createCarDetails([
-            'carId' => $carId,
-            'mileage' => $_POST['mileage'],
-            'fuel_type' => $_POST['fuel_type'],
-            'engine_size' => $_POST['engine_size'],
-            'horsepower' => $_POST['horsepower'],
-            'transmission' => $_POST['transmission'],
-            'color' => $_POST['color'],
-            'description' => $_POST['description'],
-        ]);
-        if (!$detailsId) {
-            $carRepository->deepDelete($carId);
-            $modelsRepository->deepDelete($modelId);
-            $brandsRepository->deepDelete($brandId);
-            rmdir($uploadDir);
-            $this->messages[] = "Failed to create Car Details.";
-            return $this->render("admin-cars", ['messages' => $this->messages]);
-        }
-
-        // Upload images
-        $uploadedImages = $this->saveCarImages($_FILES['images'], $uploadDir);
-        if (!$uploadedImages) {
-            $carDetailsRepository->delete($detailsId);
-            $carRepository->deepDelete($carId);
-            $modelsRepository->deepDelete($modelId);
-            $brandsRepository->deepDelete($brandId);
-            rmdir($uploadDir);
-            $this->messages[] = "Failed to save images.";
-            return $this->render("admin-cars", ['messages' => $this->messages]);
-        }
-
-        header("Location: /admin/cars");
-        return $this->render("admin-cars", ["messages" => ["Car added successfully!"]]);
     }
 
     public function admin_updateCar()
@@ -152,77 +167,81 @@ class AdminController extends AppController {
             ]);
         }
 
-        // Fetch the current car details
-        $currentCar = $carRepository->find($_POST['car_id']);
-        $currentModel = $modelsRepository->find($currentCar['model_id']);
-        $currentBrand = $brandsRepository->find($currentModel['brand_id']);
+        $db = new \Database();
+        $conn = $db->connect();
+        
+        try {
+            $conn->beginTransaction();
 
-        // Handle Brand selection/creation
-        $brandName = $_POST['brand'];
-        $brandId = $brandsRepository->create($brandName);
-        if (!$brandId) {
-            $this->messages[] = "Failed to create brand.";
-            return $this->render("admin-cars", ['messages' => $this->messages]);
-        }
+            $currentCar = $carRepository->find($_POST['car_id']);
+            $currentModel = $modelsRepository->find($currentCar['model_id']);
+            $currentBrand = $brandsRepository->find($currentModel['brand_id']);
 
-        // Handle Model selection/creation
-        $modelName = $_POST['model'];
-        $modelId = $modelsRepository->create($modelName, $brandId);
-        if (!$modelId) {
-            $brandsRepository->deepDelete($brandId);
-            $this->messages[] = "Failed to create model.";
-            return $this->render("admin-cars", ['messages' => $this->messages]);
-        }
-
-        $isNew = isset($_POST['isNew']) ? 1 : 0;
-        $isActive = isset($_POST['isActive']) ? 1 : 0;
-
-        // Updating `cars` table
-        if (!$carRepository->update([
-            'id' => $_POST['car_id'],
-            "title" => $_POST['title'],
-            'modelId' => $modelId,
-            'year' => $_POST['year'],
-            'price' => $_POST['price'],
-            'isNew' => $isNew,
-            'priority' => $_POST['priority'],
-            'status' => $_POST['status'],
-            'isActive' => $isActive,
-        ])) {
-            $this->messages[] = "Failed to update Car.";
-            return $this->render("admin-cars", ['messages' => $this->messages]);
-        }
-
-        // Updating `car_details`
-        if (!$carDetailsRepository->updateCarDetails([
-            'carId' => $_POST['car_id'],
-            'mileage' => $_POST['mileage'],
-            'fuel_type' => $_POST['fuel_type'],
-            'engine_size' => $_POST['engine_size'],
-            'horsepower' => $_POST['horsepower'],
-            'transmission' => $_POST['transmission'],
-            'color' => $_POST['color'],
-            'description' => $_POST['description'],
-        ])) {
-            $this->messages[] = "Failed to update Car Details.";
-            return $this->render("admin-cars", ['messages' => $this->messages]);
-        }
-
-        // Check if the brand or model changed and delete the old ones if no other cars are using them
-        if ($currentModel['name'] !== $modelName) {
-            if ($carRepository->countByModelId($currentModel['id']) === 0) {
-                $modelsRepository->deepDelete($currentModel['id']);
+            $brandName = $_POST['brand'];
+            $brandId = $brandsRepository->create($brandName);
+            if (!$brandId) {
+                throw new \Exception("Failed to create brand.");
             }
-        }
 
-        if ($currentBrand['name'] !== $brandName) {
-            if ($modelsRepository->countByBrandId($currentBrand['id']) === 0) {
-                $brandsRepository->deepDelete($currentBrand['id']);
+            $modelName = $_POST['model'];
+            $modelId = $modelsRepository->create($modelName, $brandId);
+            if (!$modelId) {
+                throw new \Exception("Failed to create model.");
             }
-        }
 
-        header("Location: /admin/cars");
-        return $this->render("admin-cars", ["messages" => ["Car updated successfully!"]]);
+            $isNew = isset($_POST['isNew']) ? 1 : 0;
+            $isActive = isset($_POST['isActive']) ? 1 : 0;
+
+            if (!$carRepository->update([
+                'id' => $_POST['car_id'],
+                "title" => $_POST['title'],
+                'modelId' => $modelId,
+                'year' => $_POST['year'],
+                'price' => $_POST['price'],
+                'isNew' => $isNew,
+                'priority' => $_POST['priority'],
+                'status' => $_POST['status'],
+                'isActive' => $isActive,
+            ])) {
+                throw new \Exception("Failed to update Car.");
+            }
+
+            if (!$carDetailsRepository->updateCarDetails([
+                'carId' => $_POST['car_id'],
+                'mileage' => $_POST['mileage'],
+                'fuel_type' => $_POST['fuel_type'],
+                'engine_size' => $_POST['engine_size'],
+                'horsepower' => $_POST['horsepower'],
+                'transmission' => $_POST['transmission'],
+                'color' => $_POST['color'],
+                'description' => $_POST['description'],
+            ])) {
+                throw new \Exception("Failed to update Car Details.");
+            }
+
+            $conn->commit();
+
+            if ($currentModel['name'] !== $modelName) {
+                if ($carRepository->countByModelId($currentModel['id']) === 0) {
+                    $modelsRepository->deepDelete($currentModel['id']);
+                }
+            }
+
+            if ($currentBrand['name'] !== $brandName) {
+                if ($modelsRepository->countByBrandId($currentBrand['id']) === 0) {
+                    $brandsRepository->deepDelete($currentBrand['id']);
+                }
+            }
+
+            header("Location: /admin/cars");
+            return $this->render("admin-cars", ["messages" => ["Car updated successfully!"]]);
+
+        } catch (\Exception $e) {
+            $conn->rollBack();
+            
+            $this->messages[] = $e->getMessage();
+            return $this->render("admin-cars", ['messages' => $this->messages]);
+        }
     }
 
     public function admin_addUser() {
@@ -344,5 +363,23 @@ class AdminController extends AppController {
             }
         }
         return true;
+    }
+
+    private function deleteDirectory($dir) {
+        if (!file_exists($dir)) {
+            return true;
+        }
+        if (!is_dir($dir)) {
+            return unlink($dir);
+        }
+        foreach (scandir($dir) as $item) {
+            if ($item == '.' || $item == '..') {
+                continue;
+            }
+            if (!$this->deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) {
+                return false;
+            }
+        }
+        return rmdir($dir);
     }
 }

@@ -10,9 +10,10 @@ ComponentLoader::load('header', ['title' => $car['title']]);
 <main class="single">
     <h1><?php echo $car["title"] ?></h1>
     <div class="single-details">
-        <?php foreach ($car as $key => $value): ?>
-            <p><?php echo htmlspecialchars($key) . ': ' . htmlspecialchars($value); ?></p>
-        <?php endforeach; ?>
+        <?php foreach ($car as $key => $value): 
+                if ($value !== null): ?>
+                    <p><?php echo htmlspecialchars($key) . ': ' . htmlspecialchars($value); ?></p>
+        <?php endif; endforeach; ?>
     </div>
 
     <h3>Images:</h3>
