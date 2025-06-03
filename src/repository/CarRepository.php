@@ -50,20 +50,7 @@ class CarRepository extends Repository
 
     public function findAllWithModel(): array
     {
-        $query = "
-        SELECT
-            cars.id,
-            cars.year,
-            cars.price,
-            cars.status,
-            cars.is_new,
-            cars.is_active,
-            models.name as model_name
-        FROM
-            cars
-        JOIN
-            models ON cars.model_id = models.id
-    ";
+        $query = "SELECT id, year, price, status, is_new, is_active, model_name FROM cars_with_model";
 
         try {
             $stmt = $this->db->connect()->prepare($query);
@@ -76,73 +63,66 @@ class CarRepository extends Repository
     public function findByAttributes($attributes, $page = 1, $perPage = 9): array
     {
         $offset = ($page - 1) * $perPage;
-        $query = "
-    SELECT cars.*, brands.name as brand_name, models.name as model_name, car_details.mileage as mileage, car_details.horsepower as hp
-    FROM cars
-    JOIN models ON cars.model_id = models.id
-    JOIN brands ON models.brand_id = brands.id
-    JOIN car_details ON cars.id = car_details.car_id
-    WHERE 1=1
-    ";
+        $query = "SELECT * FROM cars_search_view WHERE 1=1";
         $params = [];
 
         if (!empty($attributes["isNew"])) {
-            $query .= " AND cars.is_new = :is_new";
+            $query .= " AND is_new = :is_new";
             $params[':is_new'] = true;
         }
         if (!empty($attributes['brand'])) {
-            $query .= " AND brands.name ILIKE :brand";
+            $query .= " AND brand_name ILIKE :brand";
             $params[':brand'] = '%' . $attributes['brand'] . '%';
         }
         if (!empty($attributes['model'])) {
-            $query .= " AND models.name ILIKE :model";
+            $query .= " AND model_name ILIKE :model";
             $params[':model'] = '%' . $attributes['model'] . '%';
         }
         if (!empty($attributes['price-min'])) {
-            $query .= " AND cars.price >= :price_min";
+            $query .= " AND price >= :price_min";
             $params[':price_min'] = $attributes['price-min'];
         }
         if (!empty($attributes['price-max'])) {
-            $query .= " AND cars.price <= :price_max";
+            $query .= " AND price <= :price_max";
             $params[':price_max'] = $attributes['price-max'];
         }
         if (!empty($attributes['year-min'])) {
-            $query .= " AND cars.year >= :year_min";
+            $query .= " AND year >= :year_min";
             $params[':year_min'] = $attributes['year-min'];
         }
         if (!empty($attributes['year-max'])) {
-            $query .= " AND cars.year <= :year_max";
+            $query .= " AND year <= :year_max";
             $params[':year_max'] = $attributes['year-max'];
         }
         if (!empty($attributes['sort'])) {
             switch ($attributes['sort']) {
                 case 'price-asc':
-                    $query .= " ORDER BY cars.price ASC";
+                    $query .= " ORDER BY price ASC";
                     break;
                 case 'price-desc':
-                    $query .= " ORDER BY cars.price DESC";
+                    $query .= " ORDER BY price DESC";
                     break;
                 case 'year-asc':
-                    $query .= " ORDER BY cars.year ASC";
+                    $query .= " ORDER BY year ASC";
                     break;
                 case 'year-desc':
-                    $query .= " ORDER BY cars.year DESC";
+                    $query .= " ORDER BY year DESC";
                     break;
                 case 'mileage-asc':
-                    $query .= " ORDER BY car_details.mileage ASC";
+                    $query .= " ORDER BY mileage ASC";
                     break;
                 case 'mileage-desc':
-                    $query .= " ORDER BY car_details.mileage DESC";
+                    $query .= " ORDER BY mileage DESC";
                     break;
                 case 'power-asc':
-                    $query .= " ORDER BY car_details.horsepower ASC";
+                    $query .= " ORDER BY hp ASC";
                     break;
                 case 'power-desc':
-                    $query .= " ORDER BY car_details.horsepower DESC";
+                    $query .= " ORDER BY hp DESC";
                     break;
             }
         } else {
-            $query .= " ORDER BY cars.priority DESC";
+            $query .= " ORDER BY priority DESC";
         }
 
         $query .= " LIMIT :limit OFFSET :offset";
@@ -163,21 +143,7 @@ class CarRepository extends Repository
 
     public function findAllWithDetails($limit=null): array
     {
-        $query = "
-        SELECT 
-            cars.*, 
-            car_details.*, 
-            brands.name as brand_name, 
-            models.name as model_name 
-        FROM 
-            cars 
-        JOIN 
-            car_details ON cars.id = car_details.car_id 
-        JOIN 
-            models ON cars.model_id = models.id 
-        JOIN 
-            brands ON models.brand_id = brands.id
-    ";
+        $query = "SELECT * FROM cars_full_details";
 
         try {
             $stmt = $this->db->connect()->prepare($query);
@@ -245,29 +211,7 @@ class CarRepository extends Repository
 
     public function findByIdWithDetails($carId): array
     {
-        $query = "
-    SELECT
-        cars.*,
-        car_details.color,
-        car_details.description,
-        car_details.engine_size,
-        car_details.fuel_type,
-        car_details.horsepower,
-        car_details.mileage,
-        car_details.transmission,
-        brands.name as brand_name,
-        models.name as model_name
-    FROM
-        cars
-    JOIN
-        car_details ON cars.id = car_details.car_id
-    JOIN
-        models ON cars.model_id = models.id
-    JOIN
-        brands ON models.brand_id = brands.id
-    WHERE
-        cars.id = :car_id
-    ";
+        $query = "SELECT * FROM car_detail_view WHERE id = :car_id";
 
         try {
             $stmt = $this->db->connect()->prepare($query);
